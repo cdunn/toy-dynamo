@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["cary.dunn@gmail.com"]
   spec.description   = %q{DynamoDB ORM - extension to toystore}
   spec.summary       = %q{DynamoDB ORM - extension to toystore}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/cdunn/toy-dynamo"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
