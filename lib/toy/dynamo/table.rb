@@ -62,13 +62,15 @@ module Toy
           end
         end
 
-        @schema_loaded[:table][:local_secondary_indexes].each do |key|
-          lsi_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
-          (@range_keys ||= []) << {
-            :attribute_name => lsi_range_key[:attribute_name],
-            :attribute_type => @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == lsi_range_key[:attribute_name]}[:attribute_type],
-            :index_name => key[:index_name]
-          }
+        if @schema_loaded[:table][:local_secondary_indexes]
+          @schema_loaded[:table][:local_secondary_indexes].each do |key|
+            lsi_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
+            (@range_keys ||= []) << {
+              :attribute_name => lsi_range_key[:attribute_name],
+              :attribute_type => @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == lsi_range_key[:attribute_name]}[:attribute_type],
+              :index_name => key[:index_name]
+            }
+          end
         end
 
         @schema_loaded
@@ -179,7 +181,6 @@ module Toy
         end
         
         query_request.merge!({ :limit => options[:limit].to_i }) if options.has_key?(:limit)
-        query_request.merge!({ :limit => options[:batch].to_i }) if options.has_key?(:batch)
         query_request.merge!({ :exclusive_start_key => options[:exclusive_start_key] }) if options[:exclusive_start_key]
 
         @client.query(query_request)
@@ -194,7 +195,12 @@ module Toy
         keys_request = []
         keys.each do |k|
           key_request = {}
-          hash_value = k[:hash_value]
+          if @range_keys.present?
+            hash_value = k[:hash_value]
+          else
+            raise ArgumentError, "expected keys to be in the form of ['hash key here'] for table with no range keys" if hash_value.is_a?(Hash)
+            hash_value = k
+          end
           raise ArgumentError, "every key must include a :hash_value" if hash_value.blank?
           key_request[@hash_key[:attribute_name]] = { @hash_key[:attribute_type] => hash_value.to_s }
           if @range_keys.present?

@@ -13,6 +13,12 @@ module Toy
           raise ArgumentError, "no range_key specified for this table" if dynamo_table.range_keys.blank?
           aggregated_results = []
 
+          if (batch_size = options.delete(:batch))
+            max_results_limit = options[:limit]
+            if options[:limit] && options[:limit] > batch_size
+              options.merge!(:limit => batch_size)
+            end
+          end
           results = dynamo_table.query(hash_value, options)
           response = Response.new(results)
 
@@ -21,15 +27,23 @@ module Toy
             aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
           end
 
-          if options[:batch]
-            #!options[:limit] && 
+          if batch_size
+            results_returned = response.count
             while response.more_results?
+              if max_results_limit && (delta_results_limit = (max_results_limit-results_returned)) < batch_size
+                break if delta_results_limit == 0
+                options.merge!(:limit => delta_results_limit)
+              else
+                options.merge!(:limit => batch_size)
+              end
+
               results = dynamo_table.query(hash_value, options.merge(:exclusive_start_key => response.last_evaluated_key))
               response = Response.new(results)
               results[:member].each do |result|
                 attrs = Response.strip_attr_types(result)
                 aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
               end
+              results_returned += response.count
             end
           end
 
@@ -47,7 +61,11 @@ module Toy
           results = adapter.batch_read(keys, options)
           results[:responses][dynamo_table.table_schema[:table_name]].each do |result|
             attrs = Response.strip_attr_types(result)
-            (results_map[attrs[dynamo_table.hash_key[:attribute_name]]] ||= {})[attrs[dynamo_table.range_keys.find{|rk| rk[:primary_range_key] }[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+            if dynamo_table.range_keys.present?
+              (results_map[attrs[dynamo_table.hash_key[:attribute_name]]] ||= {})[attrs[dynamo_table.range_keys.find{|rk| rk[:primary_range_key] }[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+            else
+              results_map[attrs[dynamo_table.hash_key[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+            end
           end
           results_map
         end

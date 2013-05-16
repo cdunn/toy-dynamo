@@ -5,6 +5,7 @@ module Toy
     module Adapter
       def read(key, options=nil)
         options ||= {}
+        attrs = nil
         if @options[:model].dynamo_table.range_keys.present?
           raise ArgumentError, "Expected :range_value option" unless options[:range_value].present?
           result = @options[:model].dynamo_table.query(key, options.merge(
@@ -12,11 +13,12 @@ module Toy
               "#{@options[:model].dynamo_table.range_keys.find{|k| k[:primary_range_key] }[:attribute_name]}".to_sym.eq => options[:range_value]
             }
           ))
+          attrs = (result[:member].empty? ? nil : Response.strip_attr_types(result[:member].first))
         else
           result = @options[:model].dynamo_table.get_item(key, options)
+          attrs = (result[:item].empty? ? nil : Response.strip_attr_types(result[:item]))
         end
 
-        attrs = (result[:member].empty? ? nil : Response.strip_attr_types(result[:member].first))
         attrs
       end
 

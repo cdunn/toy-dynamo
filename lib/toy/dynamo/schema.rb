@@ -29,16 +29,17 @@ module Toy
         end
 
         def table_schema
-          {
+          schema = {
             :table_name => table_name,
             :provisioned_throughput => {
               :read_capacity_units => read_provision,
               :write_capacity_units => write_provision
             },
-            :local_secondary_indexes => local_secondary_indexes,
             :key_schema => key_schema,
             :attribute_definitions => attribute_definitions
           }
+          schema.merge!(:local_secondary_indexes => local_secondary_indexes) unless local_secondary_indexes.blank?
+          schema
         end
 
         def table_name(val=nil)
