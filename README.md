@@ -68,5 +68,4 @@ end
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * while loop for situation where batch_get_item returns batched results
 * custom table name per query/write
-* default validation for range key presence
 * error out on mismatch of table schema from dynamo_table schema (changed?)

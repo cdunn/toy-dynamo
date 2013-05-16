@@ -146,6 +146,9 @@ module Toy
             range_key_attribute = self.attributes[range_key_key.to_s]
             raise(ArgumentError, "Could not find attribute definition for range_key #{range_key_key}") unless range_key_attribute
             raise(ArgumentError, "Cannot use virtual attributes for range_key") if range_key_attribute.virtual?
+
+            validates_presence_of range_key_attribute.name.to_sym
+
             @dynamo_range_key = {
               :attribute_name => range_key_attribute.name,
               :key_type => KEY_TYPE[:range]
