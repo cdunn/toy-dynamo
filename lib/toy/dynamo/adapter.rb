@@ -34,8 +34,7 @@ module Toy
 
       def delete(key, options=nil)
         options ||= {}
-        raise 'not implemented'
-        #@options[:model].dynamo_table.delete(key, attributes, options)
+        @options[:model].dynamo_table.delete_item(key, options)
       end
 
       def clear(options=nil)

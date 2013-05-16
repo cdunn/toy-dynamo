@@ -232,7 +232,7 @@ module Toy
 
         if options[:update_item]
           # UpdateItem
-          key = {
+          key_request = {
             @hash_key[:attribute_name] => {
               @hash_key[:attribute_type] => hash_key_value.to_s
             }
@@ -241,7 +241,7 @@ module Toy
             range_key = @range_keys.find{|k| k[:primary_range_key]}
             range_key_value = attributes[range_key[:attribute_name]]
             raise ArgumentError, "range_key was not provided to the write command" if range_key_value.blank?
-            key.merge!({
+            key_request.merge!({
               range_key[:attribute_name] => {
                 range_key[:attribute_type] => range_key_value.to_s
               }
@@ -259,7 +259,7 @@ module Toy
           end
           update_item_request = {
             :table_name => @table_schema[:table_name],
-            :key => key,
+            :key => key_request,
             :attribute_updates => attrs_to_update,
             :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
           }
@@ -278,6 +278,28 @@ module Toy
           }
           @client.put_item(put_item_request)
         end
+      end
+
+      def delete_item(hash_key_value, options={})
+        key_request = {
+          @hash_key[:attribute_name] => {
+            @hash_key[:attribute_type] => hash_key_value.to_s
+          }
+        }
+        if @range_keys
+          range_key = @range_keys.find{|k| k[:primary_range_key]}
+          raise ArgumentError, "range_key was not provided to the delete_item command" if options[:range_value].blank?
+          key_request.merge!({
+            range_key[:attribute_name] => {
+              range_key[:attribute_type] => options[:range_value].to_s
+            }
+          })
+        end
+        delete_item_request = {
+          :table_name => @table_schema[:table_name],
+          :key => key_request
+        }
+        @client.delete_item(delete_item_request)
       end
 
       def type_from_value(value)

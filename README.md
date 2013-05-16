@@ -65,10 +65,8 @@ end
 	* Ruby 2.0.0p0
 
 ## TODO
-* raise error if trying to use an attribute that wasn't 'select'ed
-* use updateitem when just updating attributes that were modified on a projected set
-  * use dirty attrs
+* raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * while loop for situation where batch_get_item returns batched results
 * custom table name per query/write
 * default validation for range key presence
-* implement delete key
+* error out on mismatch of table schema from dynamo_table schema (changed?)

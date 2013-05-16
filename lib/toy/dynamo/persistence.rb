@@ -27,5 +27,15 @@ module Toy
       adapter.write(persisted_id, persisted_attributes, {:update_item => !self.new_record?})
     end
 
+    def delete
+      @_destroyed = true
+      options = {}
+      if self.class.dynamo_table.range_keys
+        range_key = self.class.dynamo_table.range_keys.find{|k| k[:primary_range_key]}
+        options[:range_value] = read_attribute(range_key[:attribute_name])
+      end
+      adapter.delete(persisted_id, options)
+    end
+
   end
 end
