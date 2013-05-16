@@ -147,7 +147,7 @@ module Toy
           raise ArgumentError, ":range key must be a Range if using the operator BETWEEN" if comparison_operator == "between" && !options[:range].values.first.is_a?(Range)
 
           if range_key.has_key?(:index_name) # Local Secondary Index
-            options[:select] = :projected
+            #options[:select] = :projected unless options[:select].present?
             query_request.merge!(:index_name => range_key[:index_name])
           end
 
@@ -172,9 +172,12 @@ module Toy
         # Default if not already set
         options[:select] ||= :all # :all, :projected, :count, []
         if options[:select].is_a?(Array)
+          attrs_to_select = [options[:select].map(&:to_s)].flatten
+          attrs_to_select << @hash_key[:attribute_name]
+          attrs_to_select << @range_keys.find{|k| k[:primary_range_key] }[:attribute_name] if @range_keys
           query_request.merge!({
             :select => QUERY_SELECT[:specific],
-            :attributes_to_get => [options[:select]].flatten
+            :attributes_to_get => attrs_to_select.uniq
           })
         else
           query_request.merge!({ :select => QUERY_SELECT[options[:select]] })
@@ -224,18 +227,57 @@ module Toy
       end
 
       def write(hash_key_value, attributes, options={})
-        options[:return_consumed_capacity] ||= :none # "NONE" # || "TOTAL"
-        items = {}
-        attributes.each_pair do |k,v|
-          items.merge!(attr_with_type(k,v))
+        options[:return_consumed_capacity] ||= :none
+        options[:update_item] = false unless options[:update_item]
+
+        if options[:update_item]
+          # UpdateItem
+          key = {
+            @hash_key[:attribute_name] => {
+              @hash_key[:attribute_type] => hash_key_value.to_s
+            }
+          }
+          if @range_keys
+            range_key = @range_keys.find{|k| k[:primary_range_key]}
+            range_key_value = attributes[range_key[:attribute_name]]
+            raise ArgumentError, "range_key was not provided to the write command" if range_key_value.blank?
+            key.merge!({
+              range_key[:attribute_name] => {
+                range_key[:attribute_type] => range_key_value.to_s
+              }
+            })
+          end
+          attrs_to_update = {}
+          attributes.each_pair do |k,v|
+            next if @range_keys && k == range_key[:attribute_name]
+            attrs_to_update.merge!({
+              k => {
+                :value => attr_with_type(k,v).values.last,
+                :action => "PUT"
+              }
+            })
+          end
+          update_item_request = {
+            :table_name => @table_schema[:table_name],
+            :key => key,
+            :attribute_updates => attrs_to_update,
+            :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
+          }
+          @client.update_item(update_item_request)
+        else
+          # PutItem
+          items = {}
+          attributes.each_pair do |k,v|
+            items.merge!(attr_with_type(k,v))
+          end
+          items.merge!(hash_key_item_param(hash_key_value))
+          put_item_request = {
+            :table_name => @table_schema[:table_name],
+            :item => items,
+            :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
+          }
+          @client.put_item(put_item_request)
         end
-        items.merge!(hash_key_item_param(hash_key_value))
-        put_item_request = {
-          :table_name => @table_schema[:table_name],
-          :item => items,
-          :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
-        }
-        @client.put_item(put_item_request)
       end
 
       def type_from_value(value)

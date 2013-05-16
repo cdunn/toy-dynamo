@@ -4,6 +4,7 @@ require "toy/dynamo/schema"
 require "toy/dynamo/table"
 require "toy/dynamo/querying"
 require "toy/dynamo/response"
+require "toy/dynamo/persistence"
 # Override 'write_attribute' for hash_key == id
 require "toy/dynamo/attributes"
 require "toy/dynamo/extensions/array"

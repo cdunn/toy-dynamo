@@ -66,5 +66,9 @@ end
 
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed
+* use updateitem when just updating attributes that were modified on a projected set
+  * use dirty attrs
 * while loop for situation where batch_get_item returns batched results
 * custom table name per query/write
+* default validation for range key presence
+* implement delete key
