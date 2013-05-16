@@ -3,6 +3,9 @@ module Toy
     module Querying
       extend ActiveSupport::Concern
 
+      # Failsafe
+      MAX_BATCH_ITERATIONS = 100
+
       module ClassMethods
 
         # Read results up to the limit
@@ -29,7 +32,8 @@ module Toy
 
           if batch_size
             results_returned = response.count
-            while response.more_results?
+            batch_iteration = 0
+            while response.more_results? && batch_iteration < MAX_BATCH_ITERATIONS
               if max_results_limit && (delta_results_limit = (max_results_limit-results_returned)) < batch_size
                 break if delta_results_limit == 0
                 options.merge!(:limit => delta_results_limit)
@@ -44,6 +48,7 @@ module Toy
                 aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
               end
               results_returned += response.count
+              batch_iteration += 1
             end
           end
 

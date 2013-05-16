@@ -67,3 +67,4 @@ end
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed
 * while loop for situation where batch_get_item returns batched results
+* custom table name per query/write
