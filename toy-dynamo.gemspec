@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Toy::Dynamo::VERSION
   spec.authors       = ["Cary Dunn"]
   spec.email         = ["cary.dunn@gmail.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.description   = %q{DynamoDB ORM - extension to toystore}
+  spec.summary       = %q{DynamoDB ORM - extension to toystore}
   spec.homepage      = ""
   spec.license       = "MIT"
 
