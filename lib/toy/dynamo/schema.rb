@@ -47,7 +47,7 @@ module Toy
             raise(ArgumentError, "Invalid table name") unless val
             @dynamo_table_name = val
           else
-            @dynamo_table_name ||= "#{Rails.application.class.parent_name.to_s.underscore.dasherize}-#{self.to_s.underscore.dasherize.pluralize}-#{Rails.env}"
+            @dynamo_table_name ||= "#{Rails.application.class.parent_name.to_s.underscore.dasherize}-#{self.to_s.underscore.dasherize.pluralize.gsub(/[^a-zA-Z0-9_.-]/, '_')}-#{Rails.env}"
             @dynamo_table_name
           end
         end
