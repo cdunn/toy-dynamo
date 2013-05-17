@@ -58,6 +58,8 @@ end
 	* Example:
 		* Model.count_range("xyz", :range => {:comment_id.eq => "123"})
 	* Returns the number of total results (no attributes)
+* **Init a UUID value**
+  * attribute :user_guid, String, :default => lambda { SimpleUUID::UUID.new.to_guid }
 
 ## Compatibility
 * Tested with
