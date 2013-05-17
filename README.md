@@ -24,7 +24,7 @@ end
 		* Can also specify an Array of attributes to project besides the primary keys ex:
 			* :projection => [:subject, :commenter_name]
 
-## Usage
+## Basic Usage
 * **Read Hash Key Only**
 	* Example:
 		* Model.read("xyz")
@@ -58,8 +58,16 @@ end
 	* Example:
 		* Model.count_range("xyz", :range => {:comment_id.eq => "123"})
 	* Returns the number of total results (no attributes)
+
+## Extras Usage
 * **Init a UUID value**
   * attribute :user_guid, String, :default => lambda { SimpleUUID::UUID.new.to_guid }
+* **Use with fake_dynamo**
+  * adapter :dynamo, AWS::DynamoDB::ClientV2.new({
+      :use_ssl => false,
+      :dynamo_db_endpoint => 'localhost',
+      :dynamo_db_port => 4567
+    }), {:model => self}
 
 ## Compatibility
 * Tested with
@@ -70,3 +78,4 @@ end
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * while loop for situation where batch_get_item returns batched results
 * error out on mismatch of table schema from dynamo_table schema (changed?)
+* allow changes to read write capacity

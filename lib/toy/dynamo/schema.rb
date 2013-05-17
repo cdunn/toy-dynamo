@@ -22,7 +22,10 @@ module Toy
           else
             @dynamo_table_config_block.call unless @dynamo_table_configged
 
-            @dynamo_table ||= Table.new(table_schema, self.adapter.client)
+            unless @dynamo_table
+              @dynamo_table = Table.new(table_schema, self.adapter.client)
+              validate_key_schema
+            end
             @dynamo_table_configged = true
             @dynamo_table
           end
@@ -155,6 +158,28 @@ module Toy
             }
           else
             @dynamo_range_key
+          end
+        end
+
+        def validate_key_schema
+          if (@dynamo_table.schema_loaded_from_dynamo[:table][:key_schema] != table_schema[:key_schema])
+            raise ArgumentError, "It appears your key schema (Hash Key/Range Key) have changed from the table definition. Rebuilding the table is necessary."
+          end
+
+          if (@dynamo_table.schema_loaded_from_dynamo[:table][:attribute_definitions] != table_schema[:attribute_definitions])
+            raise ArgumentError, "It appears your attribute definition (types?) have changed from the table definition. Rebuilding the table is necessary."
+          end
+          
+          if (@dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].collect {|i| i.delete_if{|k, v| [:index_size_bytes, :item_count].include?(k) }; i } != table_schema[:local_secondary_indexes])
+            raise ArgumentError, "It appears your local secondary indexes have changed from the table definition. Rebuilding the table is necessary."
+          end
+
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:provisioned_throughput][:read_capacity_units] != read_provision
+            puts "read_capacity_units mismatch. Need to update table?"
+          end
+
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:provisioned_throughput][:write_capacity_units] != write_provision
+            puts "write_capacity_units mismatch. Need to update table?"
           end
         end
 

@@ -2,7 +2,7 @@ module Toy
   module Dynamo
     class Table
 
-      attr_reader :table_schema, :client, :schema_loaded, :hash_key, :range_keys
+      attr_reader :table_schema, :client, :schema_loaded_from_dynamo, :hash_key, :range_keys
 
       RETURNED_CONSUMED_CAPACITY = {
         :none => "NONE",
@@ -37,22 +37,24 @@ module Toy
       def initialize(table_schema, client)
         @table_schema = table_schema
         @client = client
-        begin
-          self.load_schema
-        rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          puts "No table found! Creating..."
-          self.create
-          self.load_schema
-        end
+        #begin
+        self.load_schema
+        #rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
+          #puts "No table found! Creating..."
+          #self.create
+          #self.load_schema
+        #end
       end
 
       def load_schema
-        @schema_loaded = @client.describe_table(:table_name => @table_schema[:table_name])
+        @schema_loaded_from_dynamo = self.describe
 
-        @schema_loaded[:table][:key_schema].each do |key|
+        @schema_loaded_from_dynamo[:table][:key_schema].each do |key|
+          key_attr = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == key[:attribute_name]}
+          next if key_attr.nil?
           key_schema_attr = {
             :attribute_name => key[:attribute_name],
-            :attribute_type => @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == key[:attribute_name]}[:attribute_type]
+            :attribute_type => key_attr[:attribute_type]
           }
 
           if key[:key_type] == "HASH"
@@ -62,8 +64,8 @@ module Toy
           end
         end
 
-        if @schema_loaded[:table][:local_secondary_indexes]
-          @schema_loaded[:table][:local_secondary_indexes].each do |key|
+        if @schema_loaded_from_dynamo[:table][:local_secondary_indexes]
+          @schema_loaded_from_dynamo[:table][:local_secondary_indexes].each do |key|
             lsi_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
             (@range_keys ||= []) << {
               :attribute_name => lsi_range_key[:attribute_name],
@@ -73,7 +75,7 @@ module Toy
           end
         end
 
-        @schema_loaded
+        @schema_loaded_from_dynamo
       end
 
       def hash_key_item_param(value)
