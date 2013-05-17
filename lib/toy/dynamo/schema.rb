@@ -22,11 +22,11 @@ module Toy
           else
             @dynamo_table_config_block.call unless @dynamo_table_configged
 
-            unless @dynamo_table
+            unless @dynamo_table && @dynamo_table_configged
               @dynamo_table = Table.new(table_schema, self.adapter.client)
-              validate_key_schema
+              validate_key_schema if @dynamo_table.schema_loaded_from_dynamo
+              @dynamo_table_configged = true
             end
-            @dynamo_table_configged = true
             @dynamo_table
           end
         end
@@ -170,7 +170,7 @@ module Toy
             raise ArgumentError, "It appears your attribute definition (types?) have changed from the table definition. Rebuilding the table is necessary."
           end
           
-          if (@dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].collect {|i| i.delete_if{|k, v| [:index_size_bytes, :item_count].include?(k) }; i } != table_schema[:local_secondary_indexes])
+          if (@dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].dup.collect {|i| i.delete_if{|k, v| [:index_size_bytes, :item_count].include?(k) }; i } != table_schema[:local_secondary_indexes])
             raise ArgumentError, "It appears your local secondary indexes have changed from the table definition. Rebuilding the table is necessary."
           end
 

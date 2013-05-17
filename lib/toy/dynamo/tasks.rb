@@ -1,15 +1,18 @@
+require 'rake'
+
 namespace :ddb do
-  #desc 'Generate the Sphinx configuration file'
-  #task :configure => :environment do
-    ##interface.configure
-  #end
+  desc 'Create a DynamoDB table'
+  task :create => :environment do
+    raise "expected usage: rake ddb:create CLASS=User" unless ENV['CLASS']
+    options = {}
+    options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
+    ENV['CLASS'].constantize.dynamo_table.create(options)
+  end
 
-  #desc 'Generate the Sphinx configuration file and process all indices'
-  #task :index => :environment do
-    #interface.index(ENV['INDEX_ONLY'] != 'true')
-  #end
-
-  #def interface
-    #@interface ||= ThinkingSphinx::RakeInterface.new
-  #end
+  task :destroy => :environment do
+    raise "expected usage: rake ddb:destroy CLASS=User" unless ENV['CLASS']
+    options = {}
+    options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
+    ENV['CLASS'].constantize.dynamo_table.delete(options)
+  end
 end

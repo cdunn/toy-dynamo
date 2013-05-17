@@ -37,13 +37,13 @@ module Toy
       def initialize(table_schema, client)
         @table_schema = table_schema
         @client = client
-        #begin
-        self.load_schema
-        #rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          #puts "No table found! Creating..."
+        begin
+          self.load_schema
+        rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
+          puts "No table found!"
           #self.create
           #self.load_schema
-        #end
+        end
       end
 
       def load_schema
@@ -333,14 +333,14 @@ module Toy
           :table_name => options[:table_name] || @table_schema[:table_name]
         }))
 
-        while (table_metadata = self.describe)[:table][:table_status] == "CREATING"
+        while (table_metadata = self.describe(options))[:table][:table_status] == "CREATING"
           sleep 1
         end
         table_metadata
       end
 
-      def describe
-        @client.describe_table(:table_name => @table_schema[:table_name])
+      def describe(options={})
+        @client.describe_table(:table_name => options[:table_name] || @table_schema[:table_name])
       end
 
       def delete(options={})
