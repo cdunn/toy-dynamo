@@ -8,8 +8,9 @@
 In ActiveModel model:
 
 ```
+adapter :dynamo, AWS::DynamoDB::ClientV2.new, {:model => self}
+
 dynamo_table do
-	adapter :dynamo, AWS::DynamoDB::ClientV2.new, {:model => self}
 	hash_key :thread_guid
 end
 ```
@@ -77,5 +78,6 @@ end
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * while loop for situation where batch_get_item returns batched results
-* error out on mismatch of table schema from dynamo_table schema (changed?)
 * allow changes to read write capacity
+* lambdas for table_name (for dynamic table names)
+* string and number sets

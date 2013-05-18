@@ -4,24 +4,25 @@ module Toy
       extend ActiveSupport::Concern
 
       # Failsafe
-      MAX_BATCH_ITERATIONS = 100
+      MAX_BATCH_ITERATIONS = 1000
+      DEFAULT_BATCH_SIZE = 100
 
       module ClassMethods
 
         # Read results up to the limit
-        #   read_range("1", :range_value => "2", :limit => 10)
+        #   read_range("1", :range => { :varname.gte => "2"}, :limit => 10)
         # Loop results in given batch size until limit is hit or no more results
-        #   read_range("1", :range_value => "2", :batch => 10, :limit => 1000)
+        #   read_range("1", :range => { :varname.eq => "2"}, :batch => 10, :limit => 1000)
         def read_range(hash_value, options={})
           raise ArgumentError, "no range_key specified for this table" if dynamo_table.range_keys.blank?
           aggregated_results = []
 
-          if (batch_size = options.delete(:batch))
-            max_results_limit = options[:limit]
-            if options[:limit] && options[:limit] > batch_size
-              options.merge!(:limit => batch_size)
-            end
+          batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
+          max_results_limit = options[:limit]
+          if options[:limit] && options[:limit] > batch_size
+            options.merge!(:limit => batch_size)
           end
+
           results = dynamo_table.query(hash_value, options)
           response = Response.new(results)
 
@@ -30,7 +31,7 @@ module Toy
             aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
           end
 
-          if batch_size
+          if response.more_results?
             results_returned = response.count
             batch_iteration = 0
             while response.more_results? && batch_iteration < MAX_BATCH_ITERATIONS
