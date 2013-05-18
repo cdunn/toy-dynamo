@@ -69,6 +69,9 @@ end
       :dynamo_db_endpoint => 'localhost',
       :dynamo_db_port => 4567
     }), {:model => self}
+* **Resize table read/write capacity**
+  * rake ddb:resize CLASS=User READ=50 WRITE=10
+  * rake ddb:resize CLASS=User # Use values from model dynamo_table read_provision/write_provision
 
 ## Compatibility
 * Tested with
@@ -77,7 +80,5 @@ end
 
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
-* while loop for situation where batch_get_item returns batched results
-* allow changes to read write capacity
 * lambdas for table_name (for dynamic table names)
 * string and number sets

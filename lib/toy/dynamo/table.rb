@@ -326,7 +326,7 @@ module Toy
 
       def create(options={})
         if @client.list_tables[:table_names].include?(options[:table_name] || @table_schema[:table_name])
-          raise "Table #{options[:table_name] || @table_schema[:table_name]} already exists!"
+          raise "Table #{options[:table_name] || @table_schema[:table_name]} already exists"
         end
 
         @client.create_table(@table_schema.merge({
@@ -351,8 +351,24 @@ module Toy
             sleep 1
           end
         rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          puts "Table deleted!"
+          puts "Table deleted"
         end
+        true
+      end
+
+      def resize(options={})
+        return false unless @client.list_tables[:table_names].include?(options[:table_name] || @table_schema[:table_name])
+        @client.update_table({
+          :provisioned_throughput => {
+            :read_capacity_units => (options[:read_capacity_units] || @table_schema[:provisioned_throughput][:read_capacity_units]).to_i,
+            :write_capacity_units => (options[:write_capacity_units] || @table_schema[:provisioned_throughput][:write_capacity_units]).to_i
+          },
+          :table_name => options[:table_name] || @table_schema[:table_name]
+        })
+        while (table_metadata = self.describe) && table_metadata[:table][:table_status] == "UPDATING"
+          sleep 1
+        end
+        puts "Table resized to #{table_metadata[:table][:provisioned_throughput]}"
         true
       end
 
