@@ -60,7 +60,7 @@ module Toy
             raise(ArgumentError, "Invalid read provision") unless val.to_i >= 1
             @dynamo_read_provision = val.to_i
           else
-            @dynamo_read_provision || 10
+            @dynamo_read_provision || Toy::Dynamo::Config.read_provision
           end
         end
 
@@ -69,7 +69,7 @@ module Toy
             raise(ArgumentError, "Invalid write provision") unless val.to_i >= 1
             @dynamo_write_provision = val.to_i
           else
-            @dynamo_write_provision || 10
+            @dynamo_write_provision || Toy::Dynamo::Config.write_provision
           end
         end
 
@@ -175,11 +175,11 @@ module Toy
           end
 
           if @dynamo_table.schema_loaded_from_dynamo[:table][:provisioned_throughput][:read_capacity_units] != read_provision
-            puts "read_capacity_units mismatch. Need to update table?"
+            Toy::Dynamo::Config.logger.error "read_capacity_units mismatch. Need to update table?"
           end
 
           if @dynamo_table.schema_loaded_from_dynamo[:table][:provisioned_throughput][:write_capacity_units] != write_provision
-            puts "write_capacity_units mismatch. Need to update table?"
+            Toy::Dynamo::Config.logger.error "write_capacity_units mismatch. Need to update table?"
           end
         end
 

@@ -40,7 +40,7 @@ module Toy
         begin
           self.load_schema
         rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          puts "No table found!"
+          Toy::Dynamo::Config.logger.error "No table found!"
           #self.create
           #self.load_schema
         end
@@ -360,7 +360,7 @@ module Toy
             sleep 1
           end
         rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          puts "Table deleted"
+          Toy::Dynamo::Config.logger.info "Table deleted"
         end
         true
       end
@@ -377,7 +377,7 @@ module Toy
         while (table_metadata = self.describe) && table_metadata[:table][:table_status] == "UPDATING"
           sleep 1
         end
-        puts "Table resized to #{table_metadata[:table][:provisioned_throughput]}"
+        Toy::Dynamo::Config.logger.info "Table resized to #{table_metadata[:table][:provisioned_throughput]}"
         true
       end
 

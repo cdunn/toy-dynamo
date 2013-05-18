@@ -3,6 +3,21 @@ require 'adapter'
 module Toy
   module Dynamo
     module Adapter
+      
+      def self.default_client(config={})
+        options={}
+        options[:use_ssl] = Toy::Dynamo::Config.use_ssl
+        options[:use_ssl] = config[:use_ssl] if config.has_key?(:use_ssl)
+        options[:dynamo_db_endpoint] = config[:endpoint] || Toy::Dynamo::Config.endpoint
+        options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
+
+        options[:dynamo_db_endpoint] = config[:endpoint] || Toy::Dynamo::Config.endpoint
+        options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
+        #:dynamo_db_crc_32_check = false
+
+        @@default_client ||= AWS::DynamoDB::ClientV2.new(options)
+      end
+
       def read(key, options=nil)
         options ||= {}
         attrs = nil

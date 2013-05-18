@@ -19,7 +19,7 @@ class Comment
 
 	include Toy::Dynamo
 
-	adapter :dynamo, AWS::DynamoDB::ClientV2.new, {:model => self}
+	adapter :dynamo, Toy::Dynamo::Adapter.default_client, {:model => self}
 
 	dynamo_table do
 		hash_key :thread_guid
@@ -47,6 +47,9 @@ end
 		* :projection => :all
 		* Can also specify an Array of attributes to project besides the primary keys ex:
 			* :projection => [:subject, :commenter_name]
+* **aws-sdk config:**
+  * [http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/Core/Configuration.html](http://docs.aws.amazon.com/AWSRubySDK/latest/AWS/Core/Configuration.html)
+
 
 ## Basic Usage (toystore)
 * **Read Hash Key Only**
@@ -111,4 +114,5 @@ end
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * lambdas for table_name (for dynamic table names)
 * string and number sets (mostly for scans)
+* use MAX_ITEM_SIZE (64kb)
 
