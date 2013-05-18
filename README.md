@@ -1,3 +1,10 @@
+## Overview
+toy-dynamo is an ORM for AWS DynamoDB.  It is an extension to [toystore](https://github.com/jnunemaker/toystore) that provides an ActiveModel based ORM for schema-less type data stores.
+
+> **Toy::Object** comes with all the goods you need for plain old ruby objects -- attributes, dirty attribute tracking, equality, inheritance, serialization, cloning, logging and pretty inspecting.
+
+> **Toy::Store** includes Toy::Object and adds identity, persistence and querying through adapters, mass assignment, callbacks, validations and a few simple associations (lists and references).
+
 ## Install
 * toystore gem
 	* originally [https://github.com/jnunemaker/toystore](https://github.com/jnunemaker/toystore)
@@ -8,13 +15,29 @@
 In ActiveModel model:
 
 ```
-adapter :dynamo, AWS::DynamoDB::ClientV2.new, {:model => self}
+class Comment
 
-dynamo_table do
-	hash_key :thread_guid
+	include Toy::Dynamo
+
+	adapter :dynamo, AWS::DynamoDB::ClientV2.new, {:model => self}
+
+	dynamo_table do
+		hash_key :thread_guid
+		range_key :comment_guid
+		local_secondary_index :posted_by
+		read_provision 50
+    write_provision 10
+	end
+	
+	attribute :thread_guid, String
+	attribute :comment_guid, String, :default => lambda { SimpleUUID::UUID.new.to_guid }
+	attribute :body, String
+	attribute :posted_by, String
+	
 end
 ```
-* **Other options:**
+* **Other options for 'dynamo_table' config:**
+	* hash_key :comment_id
 	* range_key :comment_id
 	* table_name "user_dynamo_table"
 	* read_provision 20
@@ -25,7 +48,7 @@ end
 		* Can also specify an Array of attributes to project besides the primary keys ex:
 			* :projection => [:subject, :commenter_name]
 
-## Basic Usage
+## Basic Usage (toystore)
 * **Read Hash Key Only**
 	* Example:
 		* Model.read("xyz")
@@ -69,6 +92,12 @@ end
       :dynamo_db_endpoint => 'localhost',
       :dynamo_db_port => 4567
     }), {:model => self}
+* **Create table**
+	* rake ddb:create CLASS=User
+	* rake ddb:create CLASS=User TABLE=user-2013-03-14
+* **Delete table**
+	* rake ddb:delete CLASS=User
+	* rake ddb:delete CLASS=User TABLE=user-2013-03-14
 * **Resize table read/write capacity**
   * rake ddb:resize CLASS=User READ=50 WRITE=10
   * rake ddb:resize CLASS=User # Use values from model dynamo_table read_provision/write_provision
@@ -81,4 +110,5 @@ end
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * lambdas for table_name (for dynamic table names)
-* string and number sets
+* string and number sets (mostly for scans)
+

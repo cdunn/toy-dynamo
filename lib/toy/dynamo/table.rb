@@ -105,7 +105,7 @@ module Toy
         options[:select] ||= []
 
         get_item_request = {
-          :table_name => options[:table_name] || @table_schema[:table_name],
+          :table_name => options[:table_name] || self.table_name,
           :key => hash_key_item_param(hash_key),
           :consistent_read => options[:consistent_read],
           :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
@@ -133,7 +133,7 @@ module Toy
         key_conditions.merge!(hash_key_condition_param(hash_key_value))
 
         query_request = {
-          :table_name => options[:table_name] || @table_schema[:table_name],
+          :table_name => options[:table_name] || self.table_name,
           :key_conditions => key_conditions,
           :consistent_read => options[:consistent_read],
           :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]],
@@ -222,7 +222,7 @@ module Toy
         request_items_request.merge!( :attributes_to_get => [options[:select]].flatten ) unless options[:select].blank?
         request_items_request.merge!( :consistent_read => options[:consistent_read] ) if options[:consistent_read]
         batch_get_item_request = {
-          :request_items => { (options[:table_name] || @table_schema[:table_name]) => request_items_request },
+          :request_items => { (options[:table_name] || self.table_name) => request_items_request },
           :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
         }
         @client.batch_get_item(batch_get_item_request)
@@ -260,7 +260,7 @@ module Toy
             })
           end
           update_item_request = {
-            :table_name => options[:table_name] || @table_schema[:table_name],
+            :table_name => options[:table_name] || self.table_name,
             :key => key_request,
             :attribute_updates => attrs_to_update,
             :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
@@ -274,7 +274,7 @@ module Toy
           end
           items.merge!(hash_key_item_param(hash_key_value))
           put_item_request = {
-            :table_name => options[:table_name] || @table_schema[:table_name],
+            :table_name => options[:table_name] || self.table_name,
             :item => items,
             :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
           }
@@ -298,7 +298,7 @@ module Toy
           })
         end
         delete_item_request = {
-          :table_name => options[:table_name] || @table_schema[:table_name],
+          :table_name => options[:table_name] || self.table_name,
           :key => key_request
         }
         @client.delete_item(delete_item_request)
@@ -324,13 +324,22 @@ module Toy
         end
       end
 
+      # Call proc or return string
+      def table_name
+        if @table_schema[:table_name].respond_to?(:call)
+          @table_schema[:table_name].call
+        else
+          @table_schema[:table_name]
+        end
+      end
+
       def create(options={})
-        if @client.list_tables[:table_names].include?(options[:table_name] || @table_schema[:table_name])
-          raise "Table #{options[:table_name] || @table_schema[:table_name]} already exists"
+        if @client.list_tables[:table_names].include?(options[:table_name] || self.table_name)
+          raise "Table #{options[:table_name] || self.table_name} already exists"
         end
 
         @client.create_table(@table_schema.merge({
-          :table_name => options[:table_name] || @table_schema[:table_name]
+          :table_name => options[:table_name] || self.table_name
         }))
 
         while (table_metadata = self.describe(options))[:table][:table_status] == "CREATING"
@@ -340,12 +349,12 @@ module Toy
       end
 
       def describe(options={})
-        @client.describe_table(:table_name => options[:table_name] || @table_schema[:table_name])
+        @client.describe_table(:table_name => options[:table_name] || self.table_name)
       end
 
       def delete(options={})
-        return false unless @client.list_tables[:table_names].include?(options[:table_name] || @table_schema[:table_name])
-        @client.delete_table(:table_name => options[:table_name] || @table_schema[:table_name])
+        return false unless @client.list_tables[:table_names].include?(options[:table_name] || self.table_name)
+        @client.delete_table(:table_name => options[:table_name] || self.table_name)
         begin
           while (table_metadata = self.describe) && table_metadata[:table][:table_status] == "DELETING"
             sleep 1
@@ -357,13 +366,13 @@ module Toy
       end
 
       def resize(options={})
-        return false unless @client.list_tables[:table_names].include?(options[:table_name] || @table_schema[:table_name])
+        return false unless @client.list_tables[:table_names].include?(options[:table_name] || self.table_name)
         @client.update_table({
           :provisioned_throughput => {
             :read_capacity_units => (options[:read_capacity_units] || @table_schema[:provisioned_throughput][:read_capacity_units]).to_i,
             :write_capacity_units => (options[:write_capacity_units] || @table_schema[:provisioned_throughput][:write_capacity_units]).to_i
           },
-          :table_name => options[:table_name] || @table_schema[:table_name]
+          :table_name => options[:table_name] || self.table_name
         })
         while (table_metadata = self.describe) && table_metadata[:table][:table_status] == "UPDATING"
           sleep 1
