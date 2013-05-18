@@ -21,13 +21,13 @@ class Comment
 
 	adapter :dynamo, Toy::Dynamo::Adapter.default_client, {:model => self}
 
-	dynamo_table do
-		hash_key :thread_guid
-		range_key :comment_guid
-		local_secondary_index :posted_by
-		read_provision 50
+  dynamo_table do
+    hash_key :thread_guid
+    range_key :comment_guid
+    local_secondary_index :posted_by
+    read_provision 50
     write_provision 10
-	end
+  end
 	
 	attribute :thread_guid, String
 	attribute :comment_guid, String, :default => lambda { SimpleUUID::UUID.new.to_guid }
@@ -90,10 +90,10 @@ end
 * **Init a UUID value**
   * attribute :user_guid, String, :default => lambda { SimpleUUID::UUID.new.to_guid }
 * **Use with fake_dynamo**
-  * adapter :dynamo, AWS::DynamoDB::ClientV2.new({
+  * adapter :dynamo, Toy::Dynamo::Adapter.default_client({
       :use_ssl => false,
-      :dynamo_db_endpoint => 'localhost',
-      :dynamo_db_port => 4567
+      :endpoint => 'localhost',
+      :port => 4567
     }), {:model => self}
 * **Create table**
 	* rake ddb:create CLASS=User
@@ -112,7 +112,6 @@ end
 
 ## TODO
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
-* lambdas for table_name (for dynamic table names)
 * string and number sets (mostly for scans)
 * use MAX_ITEM_SIZE (64kb)
 
