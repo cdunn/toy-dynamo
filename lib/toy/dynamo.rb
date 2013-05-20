@@ -20,6 +20,7 @@ require "toy/dynamo/extensions/symbol"
 
 module Toy
   module Dynamo
+    extend self
 
     def configure
       block_given? ? yield(Toy::Dynamo::Config) : Toy::Dynamo::Config
