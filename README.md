@@ -17,7 +17,7 @@ In ActiveModel model:
 ```
 class Comment
 
-	include Toy::Dynamo
+	include Toy::Dynamo::Store
 
 	adapter :dynamo, Toy::Dynamo::Adapter.default_client, {:model => self}
 

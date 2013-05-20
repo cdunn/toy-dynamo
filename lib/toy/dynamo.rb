@@ -9,6 +9,7 @@ require "toy/dynamo/persistence"
 # Override 'write_attribute' for hash_key == id
 require "toy/dynamo/attributes"
 require "toy/dynamo/config"
+require "toy/dynamo/store"
 require "toy/dynamo/extensions/array"
 require "toy/dynamo/extensions/boolean"
 require "toy/dynamo/extensions/date"
@@ -20,12 +21,14 @@ require "toy/dynamo/extensions/symbol"
 module Toy
   module Dynamo
 
-    MAX_ITEM_SIZE = 65_536
+    def configure
+      block_given? ? yield(Toy::Dynamo::Config) : Toy::Dynamo::Config
+    end
+    alias :config :configure
 
-    extend ActiveSupport::Concern
-    include Toy::Store
+    def logger
+      Toy::Dynamo::Config.logger
+    end
 
-    include Schema
-    include Querying
   end
 end
