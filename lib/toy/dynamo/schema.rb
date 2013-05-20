@@ -162,7 +162,7 @@ module Toy
         end
 
         def validate_key_schema
-          if @dynamo_table.schema_loaded_from_dynamo[:table][:key_schema].sort_by { |k| k[:key_type] } != table_schema[:key_schema].sort_by { |k| k[:key_type] })
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:key_schema].sort_by { |k| k[:key_type] } != table_schema[:key_schema].sort_by { |k| k[:key_type] }
             raise ArgumentError, "It appears your key schema (Hash Key/Range Key) have changed from the table definition. Rebuilding the table is necessary."
           end
 
