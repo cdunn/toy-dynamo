@@ -162,15 +162,19 @@ module Toy
         end
 
         def validate_key_schema
-          if (@dynamo_table.schema_loaded_from_dynamo[:table][:key_schema].sort_by { |k| k[:key_type] } != table_schema[:key_schema].sort_by { |k| k[:key_type] })
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:key_schema].sort_by { |k| k[:key_type] } != table_schema[:key_schema].sort_by { |k| k[:key_type] })
             raise ArgumentError, "It appears your key schema (Hash Key/Range Key) have changed from the table definition. Rebuilding the table is necessary."
           end
 
-          if (@dynamo_table.schema_loaded_from_dynamo[:table][:attribute_definitions].sort_by { |k| k[:attribute_name] } != table_schema[:attribute_definitions].sort_by { |k| k[:attribute_name] })
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:attribute_definitions].sort_by { |k| k[:attribute_name] } != table_schema[:attribute_definitions].sort_by { |k| k[:attribute_name] }
             raise ArgumentError, "It appears your attribute definition (types?) have changed from the table definition. Rebuilding the table is necessary."
           end
+
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].blank? != table_schema[:local_secondary_indexes].blank?
+            raise ArgumentError, "It appears your local secondary indexes have changed from the table definition. Rebuilding the table is necessary."
+          end
           
-          if (@dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].dup.collect {|i| i.delete_if{|k, v| [:index_size_bytes, :item_count].include?(k) }; i }.sort_by { |lsi| lsi[:index_name] } != table_schema[:local_secondary_indexes].sort_by { |lsi| lsi[:index_name] })
+          if @dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes] && (@dynamo_table.schema_loaded_from_dynamo[:table][:local_secondary_indexes].dup.collect {|i| i.delete_if{|k, v| [:index_size_bytes, :item_count].include?(k) }; i }.sort_by { |lsi| lsi[:index_name] } != table_schema[:local_secondary_indexes].sort_by { |lsi| lsi[:index_name] })
             raise ArgumentError, "It appears your local secondary indexes have changed from the table definition. Rebuilding the table is necessary."
           end
 

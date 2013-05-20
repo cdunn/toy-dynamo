@@ -1,5 +1,5 @@
 ## Overview
-toy-dynamo is an ORM for AWS DynamoDB.  It is an extension to [toystore](https://github.com/jnunemaker/toystore) that provides an ActiveModel based ORM for schema-less type data stores.
+toy-dynamo is an ORM for AWS DynamoDB.  It is an extension to [toystore](https://github.com/jnunemaker/toystore) that provides an ActiveModel based ORM for schema-less data stores.
 
 > **Toy::Object** comes with all the goods you need for plain old ruby objects -- attributes, dirty attribute tracking, equality, inheritance, serialization, cloning, logging and pretty inspecting.
 
@@ -114,4 +114,8 @@ end
 * raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
 * string and number sets (mostly for scans)
 * use MAX_ITEM_SIZE (64kb)
+* fix binary data storage support
+  * add compression (gzip/lzo) => binary
+* support some sort of rolling tables (for time series type tables)
+  * cross table range queries
 
