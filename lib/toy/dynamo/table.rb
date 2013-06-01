@@ -345,6 +345,8 @@ module Toy
         while (table_metadata = self.describe(options))[:table][:table_status] == "CREATING"
           sleep 1
         end
+
+        self.load_schema
         table_metadata
       end
 
