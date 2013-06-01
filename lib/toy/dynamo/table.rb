@@ -41,8 +41,8 @@ module Toy
           self.load_schema
         rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
           Toy::Dynamo::Config.logger.error "No table found!"
-          #self.create
-          #self.load_schema
+          self.create
+          self.load_schema
         end
       end
 

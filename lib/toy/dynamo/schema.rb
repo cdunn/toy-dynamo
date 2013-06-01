@@ -135,6 +135,7 @@ module Toy
             hash_key_attribute = self.attributes[hash_key_key.to_s]
             raise(ArgumentError, "Could not find attribute definition for hash_key #{hash_key_key}") unless hash_key_attribute
             raise(ArgumentError, "Cannot use virtual attributes for hash_key") if hash_key_attribute.virtual?
+            raise(ArgumentError, "Invalid attribute type for hash_key") unless [String, Integer, Float].include?(hash_key_attribute.type)
             @dynamo_hash_key = {
               :attribute_name => hash_key_attribute.name,
               :key_type => KEY_TYPE[:hash]
@@ -149,6 +150,7 @@ module Toy
             range_key_attribute = self.attributes[range_key_key.to_s]
             raise(ArgumentError, "Could not find attribute definition for range_key #{range_key_key}") unless range_key_attribute
             raise(ArgumentError, "Cannot use virtual attributes for range_key") if range_key_attribute.virtual?
+            raise(ArgumentError, "Invalid attribute type for range_key") unless [String, Integer, Float].include?(range_key_attribute.type)
 
             validates_presence_of range_key_attribute.name.to_sym
 
