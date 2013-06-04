@@ -19,6 +19,7 @@ namespace :ddb do
     ENV['CLASS'].constantize.dynamo_table.resize(options)
   end
 
+  desc 'Destroy a DynamoDB table'
   task :destroy => :environment do
     raise "expected usage: rake ddb:destroy CLASS=User" unless ENV['CLASS']
     options = {}
