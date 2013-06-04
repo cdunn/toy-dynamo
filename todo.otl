@@ -1,0 +1,9 @@
+[_] Batch delete
+[_] raise error if trying to use an attribute that wasn't 'select'ed (defaulting to selecting all attributes which loads everything with an extra read)
+[_] string and number sets (mostly for scans)
+[_] use MAX_ITEM_SIZE (64kb)
+[_] fix binary data storage support
+[_] add compression (gzip/lzo) => binary
+[_] support some sort of rolling tables (for time series type tables)
+[_] cross table range queries
+[_] model.reload for models with hash + range
