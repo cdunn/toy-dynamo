@@ -16,7 +16,7 @@ module Toy
           :include => "INCLUDE"
         }
 
-        def dynamo_table(&block)
+        def dynamo_table(options={}, &block)
           if block
             @dynamo_table_config_block ||= block
           else
@@ -24,8 +24,10 @@ module Toy
 
             unless @dynamo_table && @dynamo_table_configged
               @dynamo_table = Table.new(table_schema, self.adapter.client)
-              validate_key_schema if @dynamo_table.schema_loaded_from_dynamo
-              @dynamo_table_configged = true
+              unless options[:novalidate]
+                validate_key_schema if @dynamo_table.schema_loaded_from_dynamo
+                @dynamo_table_configged = true
+              end
             end
             @dynamo_table
           end

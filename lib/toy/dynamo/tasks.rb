@@ -24,6 +24,6 @@ namespace :ddb do
     raise "expected usage: rake ddb:destroy CLASS=User" unless ENV['CLASS']
     options = {}
     options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
-    ENV['CLASS'].constantize.dynamo_table.delete(options)
+    ENV['CLASS'].constantize.dynamo_table(:novalidate => true).delete(options)
   end
 end

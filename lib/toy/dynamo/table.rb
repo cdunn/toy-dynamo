@@ -67,9 +67,11 @@ module Toy
         if @schema_loaded_from_dynamo[:table][:local_secondary_indexes]
           @schema_loaded_from_dynamo[:table][:local_secondary_indexes].each do |key|
             lsi_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
+            lsi_range_attribute = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == lsi_range_key[:attribute_name]}
+            next if lsi_range_attribute.nil?
             (@range_keys ||= []) << {
               :attribute_name => lsi_range_key[:attribute_name],
-              :attribute_type => @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == lsi_range_key[:attribute_name]}[:attribute_type],
+              :attribute_type => lsi_range_attribute[:attribute_type],
               :index_name => key[:index_name]
             }
           end
