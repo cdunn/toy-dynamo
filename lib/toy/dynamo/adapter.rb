@@ -31,7 +31,7 @@ module Toy
           attrs = (result[:member].empty? ? nil : Response.strip_attr_types(result[:member].first))
         else
           result = @options[:model].dynamo_table.get_item(key, options)
-          attrs = ((result.empty? || result[:item].empty?) ? nil : Response.strip_attr_types(result[:item]))
+          attrs = (result.try(:[], :item).blank? ? nil : Response.strip_attr_types(result[:item]))
         end
 
         attrs

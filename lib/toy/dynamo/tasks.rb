@@ -6,7 +6,7 @@ namespace :ddb do
     raise "expected usage: rake ddb:create CLASS=User" unless ENV['CLASS']
     options = {}
     options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
-    ENV['CLASS'].constantize.dynamo_table.create(options)
+    ENV['CLASS'].constantize.dynamo_table(:novalidate => true).create(options)
   end
 
   desc 'Resize a DynamoDB table read/write provision'

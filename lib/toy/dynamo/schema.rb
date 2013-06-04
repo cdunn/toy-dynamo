@@ -23,11 +23,17 @@ module Toy
             @dynamo_table_config_block.call unless @dynamo_table_configged
 
             unless @dynamo_table && @dynamo_table_configged
-              @dynamo_table = Table.new(table_schema, self.adapter.client)
+              begin
+                @dynamo_table = Table.new(table_schema, self.adapter.client, options)
+              rescue Exception => e
+                # Reset table_schema
+                @local_secondary_indexes = []
+                raise e
+              end
               unless options[:novalidate]
                 validate_key_schema if @dynamo_table.schema_loaded_from_dynamo
-                @dynamo_table_configged = true
               end
+              @dynamo_table_configged = true
             end
             @dynamo_table
           end
@@ -43,7 +49,7 @@ module Toy
             :key_schema => key_schema,
             :attribute_definitions => attribute_definitions
           }
-          schema.merge!(:local_secondary_indexes => local_secondary_indexes) unless local_secondary_indexes.blank?
+          schema[:local_secondary_indexes] = local_secondary_indexes unless local_secondary_indexes.blank?
           schema
         end
 

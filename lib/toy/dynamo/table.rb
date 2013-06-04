@@ -34,16 +34,10 @@ module Toy
         :between => "BETWEEN"
       }
 
-      def initialize(table_schema, client)
+      def initialize(table_schema, client, options={})
         @table_schema = table_schema
         @client = client
-        begin
-          self.load_schema
-        rescue AWS::DynamoDB::Errors::ResourceNotFoundException => e
-          Toy::Dynamo::Config.logger.error "No table found!"
-          self.create
-          self.load_schema
-        end
+        self.load_schema unless options[:novalidate]
       end
 
       def load_schema
