@@ -4,9 +4,20 @@ namespace :ddb do
   desc 'Create a DynamoDB table'
   task :create => :environment do
     raise "expected usage: rake ddb:create CLASS=User" unless ENV['CLASS']
-    options = {}
-    options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
-    ENV['CLASS'].constantize.dynamo_table(:novalidate => true).create(options)
+    if ENV["CLASS"] == "all"
+      Toy::Dynamo::Config.included_models.each do |klass|
+        puts "Creating table for #{klass}..."
+        begin
+          klass.dynamo_table(:novalidate => true).create
+        rescue Exception => e
+          puts "Could not create table! #{e.inspect}"
+        end
+      end
+    else
+      options = {}
+      options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
+      ENV['CLASS'].constantize.dynamo_table(:novalidate => true).create(options)
+    end
   end
 
   desc 'Resize a DynamoDB table read/write provision'
