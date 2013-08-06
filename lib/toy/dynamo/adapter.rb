@@ -15,7 +15,7 @@ module Toy
         options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
         #:dynamo_db_crc_32_check = false
 
-        @@default_client ||= AWS::DynamoDB::ClientV2.new(options)
+        @@default_client ||= AWS::DynamoDB::Client.new(options)
       end
 
       def read(key, options=nil)
