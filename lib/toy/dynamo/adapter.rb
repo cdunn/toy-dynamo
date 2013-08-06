@@ -13,9 +13,10 @@ module Toy
 
         options[:dynamo_db_endpoint] = config[:endpoint] || Toy::Dynamo::Config.endpoint
         options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
+        options[:api_version] ||= config[:api_version] || '2012-08-10'
         #:dynamo_db_crc_32_check = false
 
-        @@default_client ||= AWS::DynamoDB::ClientV2.new(options)
+        @@default_client ||= AWS::DynamoDB::Client.new(options)
       end
 
       def read(key, options=nil)
