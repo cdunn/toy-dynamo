@@ -248,12 +248,16 @@ module Toy
           attrs_to_update = {}
           attributes.each_pair do |k,v|
             next if @range_keys && k == range_key[:attribute_name]
-            attrs_to_update.merge!({
-              k => {
-                :value => attr_with_type(k,v).values.last,
-                :action => "PUT"
-              }
-            })
+            if v.blank?
+              attrs_to_update.merge!({ k => { :action => "DELETE" } })
+            else
+              attrs_to_update.merge!({
+                k => {
+                  :value => attr_with_type(k,v).values.last,
+                  :action => "PUT"
+                }
+              })
+            end
           end
           update_item_request = {
             :table_name => options[:table_name] || self.table_name,

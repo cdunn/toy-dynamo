@@ -15,9 +15,7 @@ module Toy
       end
 
       attributes_to_persist.each do |attribute|
-        if (value = attribute.to_store(read_attribute(attribute.name)))
-          attributes_with_values[attribute.persisted_name] = value
-        end
+        attributes_with_values[attribute.persisted_name] = attribute.to_store(read_attribute(attribute.name))
       end
 
       attributes_with_values
