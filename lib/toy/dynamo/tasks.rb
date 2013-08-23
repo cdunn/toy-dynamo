@@ -4,18 +4,18 @@ namespace :ddb do
   desc 'Create a DynamoDB table'
   task :create => :environment do
     raise "expected usage: rake ddb:create CLASS=User" unless ENV['CLASS']
+    options = {}
+    options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
     if ENV["CLASS"] == "all"
       Toy::Dynamo::Config.included_models.each do |klass|
         puts "Creating table for #{klass}..."
         begin
-          klass.dynamo_table(:novalidate => true).create
+          klass.dynamo_table(:novalidate => true).create(options)
         rescue Exception => e
           puts "Could not create table! #{e.inspect}"
         end
       end
     else
-      options = {}
-      options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
       ENV['CLASS'].constantize.dynamo_table(:novalidate => true).create(options)
     end
   end
@@ -35,6 +35,17 @@ namespace :ddb do
     raise "expected usage: rake ddb:destroy CLASS=User" unless ENV['CLASS']
     options = {}
     options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
-    ENV['CLASS'].constantize.dynamo_table(:novalidate => true).delete(options)
+    if ENV["CLASS"] == "all"
+      Toy::Dynamo::Config.included_models.each do |klass|
+        puts "Destroying table for #{klass}..."
+        begin
+          klass.dynamo_table(:novalidate => true).delete(options)
+        rescue Exception => e
+          puts "Could not create table! #{e.inspect}"
+        end
+      end
+    else
+      ENV['CLASS'].constantize.dynamo_table(:novalidate => true).delete(options)
+    end
   end
 end
