@@ -270,6 +270,7 @@ module Toy
           # PutItem
           items = {}
           attributes.each_pair do |k,v|
+            next if v.nil?
             items.merge!(attr_with_type(k,v))
           end
           items.merge!(hash_key_item_param(hash_key_value))
