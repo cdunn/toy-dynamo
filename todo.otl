@@ -7,3 +7,4 @@
 [_] support some sort of rolling tables (for time series type tables)
 [_] cross table range queries
 [_] model.reload for models with hash + range
+[_] watch out for in place edits of hashes not saving to ddb (or figure a way to track dirty changes?)
