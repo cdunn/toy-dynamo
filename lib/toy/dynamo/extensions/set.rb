@@ -6,7 +6,7 @@ module Toy
       end
 
       def to_store(value, *)
-        Marshal.dump(value)
+        AWS::DynamoDB::Binary.new(Marshal.dump(value))
       end
 
       def from_store(value, *)

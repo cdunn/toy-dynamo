@@ -3,7 +3,7 @@ module Toy
     module Array
       def to_store(value, *)
         value = value.respond_to?(:lines) ? value.lines : value
-        Marshal.dump(value.to_a)
+        AWS::DynamoDB::Binary.new(Marshal.dump(value.to_a))
       end
 
       def from_store(value, *)
