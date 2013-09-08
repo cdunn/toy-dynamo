@@ -241,6 +241,7 @@ module Toy
               :key_type => KEY_TYPE[:range]
             }
           ]
+          return false if (@local_secondary_indexes ||= []).select {|i| i[:index_name] == local_secondary_index_hash[:index_name] }.present? # Do not add if we already have a range key set for this attr
           (@local_secondary_indexes ||= []) << local_secondary_index_hash
         end
 
