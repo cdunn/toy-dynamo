@@ -31,8 +31,24 @@ module Toy
         :ge => "GE",
         :gt => "GT",
         :begins_with => "BEGINS_WITH",
-        :between => "BETWEEN"
+        :between => "BETWEEN",
+        # Scan only
+        :ne => "NE",
+        :not_null => "NOT_NULL",
+        :null => "NULL",
+        :contains => "CONTAINS",
+        :not_contains => "NOT_CONTAINS",
+        :in => "IN"
       }
+
+      COMPARISON_OPERATOR_SCAN_ONLY = [
+        :ne, 
+        :not_null,
+        :null,
+        :contains,
+        :not_contains,
+        :in
+      ]
 
       def initialize(table_schema, client, options={})
         @table_schema = table_schema
@@ -139,7 +155,7 @@ module Toy
         if options[:range] 
           raise ArgumentError, "Expected a 1 element Hash for :range (ex {:age.gt => 13})" unless options[:range].is_a?(Hash) && options[:range].keys.size == 1
           range_key_name, comparison_operator = options[:range].keys.first.split(".")
-          raise ArgumentError, "Comparison operator must be one of (#{COMPARISON_OPERATOR.keys.join(", ")})" unless COMPARISON_OPERATOR.keys.include?(comparison_operator.to_sym)
+          raise ArgumentError, "Comparison operator must be one of (#{(COMPARISON_OPERATOR.keys - COMPARISON_OPERATOR_SCAN_ONLY).join(", ")})" unless COMPARISON_OPERATOR.keys.include?(comparison_operator.to_sym)
           range_key = @range_keys.find{|k| k[:attribute_name] == range_key_name}
           raise ArgumentError, ":range key must be a valid Range attribute" unless range_key
           raise ArgumentError, ":range key must be a Range if using the operator BETWEEN" if comparison_operator == "between" && !options[:range].values.first.is_a?(Range)
@@ -323,6 +339,70 @@ module Toy
         else
           raise ArgumentError, "unsupported attribute type #{value.class}"
         end
+      end
+
+      # Perform a table scan
+      # http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Scan.html
+      def scan(options={})
+        options[:return_consumed_capacity] ||= :none # "NONE" # || "TOTAL"
+        # Default if not already set
+        options[:select] ||= :all # :all, :projected, :count, []
+
+        scan_request = {
+          :table_name => options[:table_name] || self.table_name,
+          :return_consumed_capacity => RETURNED_CONSUMED_CAPACITY[options[:return_consumed_capacity]]
+        }
+
+        scan_request.merge!({ :limit => options[:limit].to_i }) if options.has_key?(:limit)
+        scan_request.merge!({ :exclusive_start_key => options[:exclusive_start_key] }) if options[:exclusive_start_key]
+
+        if options[:select].is_a?(Array)
+          attrs_to_select = [options[:select].map(&:to_s)].flatten
+          attrs_to_select << @hash_key[:attribute_name]
+          attrs_to_select << @range_keys.find{|k| k[:primary_range_key] }[:attribute_name] if @range_keys
+          scan_request.merge!({
+            :select => QUERY_SELECT[:specific],
+            :attributes_to_get => attrs_to_select.uniq
+          })
+        else
+          scan_request.merge!({ :select => QUERY_SELECT[options[:select]] })
+        end
+
+        # :scan_filter => { :name.begins_with => "a" }
+        scan_filter = {}
+        if options[:scan_filter].present?
+          options[:scan_filter].each_pair.each do |k,v|
+            # Hard to validate attribute types here, so infer by type sent and assume the user knows their own attrs
+            key_name, comparison_operator = k.split(".")
+            raise ArgumentError, "Comparison operator must be one of (#{COMPARISON_OPERATOR.keys.join(", ")})" unless COMPARISON_OPERATOR.keys.include?(comparison_operator.to_sym)
+            raise ArgumentError, "scan_filter value must be a Range if using the operator BETWEEN" if comparison_operator == "between" && !v.is_a?(Range)
+            raise ArgumentError, "scan_filter value must be a Array if using the operator IN" if comparison_operator == "in" && !v.is_a?(Array)
+
+            attribute_value_list = []
+            if comparison_operator == "in"
+              v.each do |in_v|
+                attribute_value_list << attr_with_type(key_name, in_v).values.last
+              end
+            elsif comparison_operator == "between"
+              attribute_value_list << attr_with_type(key_name, range_value.min).values.last
+              attribute_value_list << attr_with_type(key_name, range_value.max).values.last
+            else
+              attribute_value_list << attr_with_type(key_name, v).values.last
+            end
+            scan_filter.merge!({
+              key_name => {
+                :comparison_operator => COMPARISON_OPERATOR[comparison_operator.to_sym],
+                :attribute_value_list => attribute_value_list
+              }
+            })
+          end
+          scan_request.merge!(:scan_filter => scan_filter)
+        end
+
+        scan_request.merge!({ :segment => options[:segment] }) if options[:segment]
+        scan_request.merge!({ :total_segments => options[:total_segments].to_i }) if options[:total_segments]
+
+        @client.scan(scan_request)
       end
 
       # Call proc or return string
