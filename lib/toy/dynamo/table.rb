@@ -399,8 +399,8 @@ module Toy
           scan_request.merge!(:scan_filter => scan_filter)
         end
 
-        scan_request.merge!({ :segment => options[:segment].to_i }) if options[:segment]
-        scan_request.merge!({ :total_segments => options[:total_segments].to_i }) if options[:total_segments]
+        scan_request.merge!({ :segment => options[:segment].to_i }) if options[:segment].present?
+        scan_request.merge!({ :total_segments => options[:total_segments].to_i }) if options[:total_segments].present?
 
         @client.scan(scan_request)
       end
