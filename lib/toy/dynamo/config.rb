@@ -25,23 +25,17 @@ module Toy
       #option :access_key
       #option :secret_key
 
-      # The default logger for Dynamoid: either the Rails logger or just stdout.
-      #
-      # @since 0.2.0
+      # The default logger: either the Rails logger or just stdout.
       def default_logger
         defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : ::Logger.new($stdout)
       end
 
       # Returns the assigned logger instance.
-      #
-      # @since 0.2.0
       def logger
         @logger ||= default_logger
       end
 
       # If you want to, set the logger manually to any output you'd like. Or pass false or nil to disable logging entirely.
-      #
-      # @since 0.2.0
       def logger=(logger)
         case logger
         when false, nil then @logger = nil

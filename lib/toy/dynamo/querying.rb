@@ -76,6 +76,24 @@ module Toy
           results_map
         end
 
+        def scan(options={})
+          results = dynamo_table.scan(options)
+          aggregated_results = []
+
+          response = Response.new(results)
+
+          results[:member].each do |result|
+            attrs = Response.strip_attr_types(result)
+            aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+          end
+
+          #if response.more_results?
+          # TODO: only 1mb of results are returned, iterate through using last_evalutated_key
+          #end
+
+          aggregated_results
+        end
+
       end # ClassMethods
 
     end
