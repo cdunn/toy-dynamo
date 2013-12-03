@@ -76,9 +76,16 @@ module Toy
           results_map
         end
 
+        #:count=>10, :scanned_count=>10, :last_evaluated_key=>{"guid"=>{:s=>"11f82550-5c5d-11e3-9b55-d311a43114ca"}}}
         def scan(options={})
           results = dynamo_table.scan(options)
           aggregated_results = []
+
+          batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
+          max_results_limit = options[:limit]
+          if options[:limit] && options[:limit] > batch_size
+            options.merge!(:limit => batch_size)
+          end
 
           response = Response.new(results)
 
@@ -87,9 +94,27 @@ module Toy
             aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
           end
 
-          #if response.more_results?
-          # TODO: only 1mb of results are returned, iterate through using last_evalutated_key
-          #end
+          if response.more_results?
+            results_returned = response.count
+            batch_iteration = 0
+            while response.more_results? && batch_iteration < MAX_BATCH_ITERATIONS
+              if max_results_limit && (delta_results_limit = (max_results_limit-results_returned)) < batch_size
+                break if delta_results_limit == 0
+                options.merge!(:limit => delta_results_limit)
+              else
+                options.merge!(:limit => batch_size)
+              end
+
+              results = dynamo_table.scan(options.merge(:exclusive_start_key => response.last_evaluated_key))
+              response = Response.new(results)
+              results[:member].each do |result|
+                attrs = Response.strip_attr_types(result)
+                aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+              end
+              results_returned += response.count
+              batch_iteration += 1
+            end
+          end
 
           aggregated_results
         end
