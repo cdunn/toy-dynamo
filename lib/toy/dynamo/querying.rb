@@ -77,6 +77,8 @@ module Toy
         end
 
         #:count=>10, :scanned_count=>10, :last_evaluated_key=>{"guid"=>{:s=>"11f82550-5c5d-11e3-9b55-d311a43114ca"}}}
+        # :manual_batching => true|false
+        #   return results with last_evaluated_key instead of automatically looping through (useful to throttle or )
         def scan(options={})
           results = dynamo_table.scan(options)
           aggregated_results = []
@@ -94,7 +96,7 @@ module Toy
             aggregated_results << load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
           end
 
-          if response.more_results?
+          if response.more_results? && !options[:manual_batching]
             results_returned = response.count
             batch_iteration = 0
             while response.more_results? && batch_iteration < MAX_BATCH_ITERATIONS
@@ -116,7 +118,14 @@ module Toy
             end
           end
 
-          aggregated_results
+          if options[:manual_batching]
+            {
+              :results => aggregated_results,
+              :last_evaluated_key => results[:last_evaluated_key]
+            }
+          else
+            aggregated_results
+          end
         end
 
       end # ClassMethods
