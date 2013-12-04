@@ -80,15 +80,13 @@ module Toy
         # :manual_batching => true|false
         #   return results with last_evaluated_key instead of automatically looping through (useful to throttle or )
         def scan(options={})
-          results = dynamo_table.scan(options)
           aggregated_results = []
 
           batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
+          options.merge!(:limit => batch_size)
           max_results_limit = options[:limit]
-          if options[:limit] && options[:limit] > batch_size
-            options.merge!(:limit => batch_size)
-          end
 
+          results = dynamo_table.scan(options)
           response = Response.new(results)
 
           results[:member].each do |result|
@@ -119,10 +117,12 @@ module Toy
           end
 
           if options[:manual_batching]
-            {
+            response_hash = {
               :results => aggregated_results,
               :last_evaluated_key => results[:last_evaluated_key]
             }
+            response_hash.merge!(:consumed_capacity => results[:consumed_capacity]) if results[:consumed_capacity]
+            response_hash
           else
             aggregated_results
           end
