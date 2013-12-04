@@ -4,7 +4,7 @@ module Toy
       extend ActiveSupport::Concern
 
       # Failsafe
-      MAX_BATCH_ITERATIONS = 1000
+      MAX_BATCH_ITERATIONS = 99_999
       DEFAULT_BATCH_SIZE = 100
 
       module ClassMethods
@@ -83,8 +83,8 @@ module Toy
           aggregated_results = []
 
           batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
-          options.merge!(:limit => batch_size)
           max_results_limit = options[:limit]
+          options[:limit] = batch_size
 
           results = dynamo_table.scan(options)
           response = Response.new(results)
