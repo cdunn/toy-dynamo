@@ -11,8 +11,6 @@ module Toy
         options[:dynamo_db_endpoint] = config[:endpoint] || Toy::Dynamo::Config.endpoint
         options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
 
-        options[:dynamo_db_endpoint] = config[:endpoint] || Toy::Dynamo::Config.endpoint
-        options[:dynamo_db_port] = config[:port] || Toy::Dynamo::Config.port
         options[:api_version] ||= config[:api_version] || '2012-08-10'
         #:dynamo_db_crc_32_check = false
 

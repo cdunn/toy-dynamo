@@ -15,7 +15,6 @@ module Toy
       option :logger, :default => defined?(Rails)
       option :read_provision, :default => 50
       option :write_provision, :default => 10
-      option :included_models, :default => []
       # TODO - default adapter client based on config
       #option :namespace, :default => defined?(Rails) ? "#{Rails.application.class.parent_name}_#{Rails.env}" : ""
       option :endpoint, :default => 'dynamodb.us-west-2.amazonaws.com'

@@ -1,5 +1,33 @@
 require 'rake'
 
+module Toy
+  module Dynamo
+    module Tasks
+      extend self
+      def included_models
+        dir    = ENV['DIR'].to_s != '' ? ENV['DIR'] : Rails.root.join("app/models")
+        puts "Loading models from: #{dir}"
+        Dir.glob(File.join("#{dir}/**/*.rb")).each do |path|
+          model_filename = path[/#{Regexp.escape(dir.to_s)}\/([^\.]+).rb/, 1]
+          next if model_filename.match(/^concerns\//i) # Skip concerns/ folder
+          klass = model_filename.camelize.constantize
+
+          begin
+            klass = model_filename.camelize.constantize
+          rescue NameError
+            require(path) ? retry : raise
+          end
+
+          # Skip if the class doesn't have Toy::Dynamo integration
+          next unless klass.respond_to?(:dynamo_table)
+
+          puts klass
+        end
+      end
+    end
+  end
+end
+
 namespace :ddb do
   desc 'Create a DynamoDB table'
   task :create => :environment do
@@ -7,7 +35,7 @@ namespace :ddb do
     options = {}
     options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
     if ENV["CLASS"] == "all"
-      Toy::Dynamo::Config.included_models.each do |klass|
+      Toy::Dynamo::Tasks.included_models.each do |klass|
         puts "Creating table for #{klass}..."
         begin
           klass.dynamo_table(:novalidate => true).create(options)
@@ -36,7 +64,7 @@ namespace :ddb do
     options = {}
     options.merge!(:table_name => ENV['TABLE']) if ENV['TABLE']
     if ENV["CLASS"] == "all"
-      Toy::Dynamo::Config.included_models.each do |klass|
+      Toy::Dynamo::Tasks.included_models.each do |klass|
         puts "Destroying table for #{klass}..."
         begin
           klass.dynamo_table(:novalidate => true).delete(options)
