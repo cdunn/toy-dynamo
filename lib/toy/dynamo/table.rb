@@ -74,14 +74,15 @@ module Toy
           end
         end
 
-        if @schema_loaded_from_dynamo[:table][:local_secondary_indexes]
-          @schema_loaded_from_dynamo[:table][:local_secondary_indexes].each do |key|
-            lsi_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
-            lsi_range_attribute = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == lsi_range_key[:attribute_name]}
-            next if lsi_range_attribute.nil?
+        if @schema_loaded_from_dynamo[:table][:local_secondary_indexes] || @schema_loaded_from_dynamo[:table][:global_secondary_indexes]
+          ((@schema_loaded_from_dynamo[:table][:local_secondary_indexes] || []) + (@schema_loaded_from_dynamo[:table][:global_secondary_indexes] || [])).each do |key|
+            si_range_key = key[:key_schema].find{|h| h[:key_type] == "RANGE" }
+            next if si_range_key.nil?
+            si_range_attribute = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == si_range_key[:attribute_name]}
+            next if si_range_attribute.nil?
             (@range_keys ||= []) << {
-              :attribute_name => lsi_range_key[:attribute_name],
-              :attribute_type => lsi_range_attribute[:attribute_type],
+              :attribute_name => si_range_key[:attribute_name],
+              :attribute_type => si_range_attribute[:attribute_type],
               :index_name => key[:index_name]
             }
           end
@@ -96,8 +97,7 @@ module Toy
         { hash_key => { hash_key_type => value } }
       end
 
-      def hash_key_condition_param(value)
-        hash_key = @table_schema[:key_schema].find{|h| h[:key_type] == "HASH"}[:attribute_name]
+      def hash_key_condition_param(hash_key, value)
         hash_key_type = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == hash_key}[:attribute_type]
         {
           hash_key => {
@@ -142,7 +142,17 @@ module Toy
         #options[:exclusive_start_key]
 
         key_conditions = {}
-        key_conditions.merge!(hash_key_condition_param(hash_key_value))
+        gsi = nil
+        if options[:global_secondary_index]
+          # TODO
+          gsi = @table_schema[:global_secondary_indexes].select{ |gsi| gsi[:index_name].to_s == options[:global_secondary_index].to_s}.first
+          raise ArgumentError, "Could not find Global Secondary Index '#{options[:global_secondary_index]}'" unless gsi
+          gsi_hash_key = gsi[:key_schema].find{|h| h[:key_type] == "HASH"}[:attribute_name]
+          key_conditions.merge!(hash_key_condition_param(gsi_hash_key, hash_key_value))
+        else
+          hash_key = @table_schema[:key_schema].find{|h| h[:key_type] == "HASH"}[:attribute_name]
+          key_conditions.merge!(hash_key_condition_param(hash_key, hash_key_value))
+        end
 
         query_request = {
           :table_name => options[:table_name] || self.table_name,
@@ -153,14 +163,24 @@ module Toy
         }
 
         if options[:range] 
-          raise ArgumentError, "Expected a 1 element Hash for :range (ex {:age.gt => 13})" unless options[:range].is_a?(Hash) && options[:range].keys.size == 1
+          raise ArgumentError, "Expected a 1 element Hash for :range (ex {:age.gt => 13})" unless options[:range].is_a?(Hash) && options[:range].keys.size == 1 && options[:range].keys.first.is_a?(String)
           range_key_name, comparison_operator = options[:range].keys.first.split(".")
           raise ArgumentError, "Comparison operator must be one of (#{(COMPARISON_OPERATOR.keys - COMPARISON_OPERATOR_SCAN_ONLY).join(", ")})" unless COMPARISON_OPERATOR.keys.include?(comparison_operator.to_sym)
-          range_key = @range_keys.find{|k| k[:attribute_name] == range_key_name}
+          range_key = nil
+          #[{:attribute_name=>"health_check_guid", :attribute_type=>"S", :primary_range_key=>true}]
+          #raise @range_keys.inspect
+          #if options[:global_secondary_index]
+            #raise @table_schema.inspect
+            #hash_key_type = @table_schema[:attribute_definitions].find{|h| h[:attribute_name] == hash_key}[:attribute_type]
+            #raise gsi[:key_schema].inspect
+            ##range_key = gsi.find{|k| k[:attribute_name] == range_key_name}
+          #else
+            range_key = @range_keys.find{|k| k[:attribute_name] == range_key_name}
+          #end
           raise ArgumentError, ":range key must be a valid Range attribute" unless range_key
           raise ArgumentError, ":range key must be a Range if using the operator BETWEEN" if comparison_operator == "between" && !options[:range].values.first.is_a?(Range)
 
-          if range_key.has_key?(:index_name) # Local Secondary Index
+          if range_key.has_key?(:index_name) # Local/Global Secondary Index
             #options[:select] = :projected unless options[:select].present?
             query_request.merge!(:index_name => range_key[:index_name])
           end
@@ -181,6 +201,10 @@ module Toy
               :comparison_operator => COMPARISON_OPERATOR[comparison_operator.to_sym]
             }
           })
+        end
+
+        if options[:global_secondary_index] # Override index_name if using GSI
+          query_request.merge!(:index_name => gsi[:index_name])
         end
 
         # Default if not already set

@@ -14,7 +14,7 @@ module Toy
         # Loop results in given batch size until limit is hit or no more results
         #   read_range("1", :range => { :varname.eq => "2"}, :batch => 10, :limit => 1000)
         def read_range(hash_value, options={})
-          raise ArgumentError, "no range_key specified for this table" if dynamo_table.range_keys.blank?
+          raise ArgumentError, "no range_key specified for this table" if dynamo_table.range_keys.blank? && global_secondary_indexes.blank?
           aggregated_results = []
 
           batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
