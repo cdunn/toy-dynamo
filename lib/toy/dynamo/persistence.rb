@@ -10,7 +10,7 @@ module Toy
       else
         attributes_to_persist = self.class.persisted_attributes.select { |a|
           # Persist changed attributes and always the range key if applicable (for lookup)
-          self.changed_attributes.keys.include?(a.name) || (self.class.dynamo_table.range_keys && self.class.dynamo_table.range_keys.find{|k| k[:primary_range_key]}[:attribute_name] == a.name)
+          self.changed_attributes.keys.include?(a.name) || (self.class.dynamo_table.range_keys && (primary_range_key = self.class.dynamo_table.range_keys.find{|k| k[:primary_range_key]}) && primary_range_key[:attribute_name] == a.name)
         }
       end
 
@@ -28,9 +28,8 @@ module Toy
     def delete
       @_destroyed = true
       options = {}
-      if self.class.dynamo_table.range_keys
-        range_key = self.class.dynamo_table.range_keys.find{|k| k[:primary_range_key]}
-        options[:range_value] = read_attribute(range_key[:attribute_name])
+      if self.class.dynamo_table.range_keys && primary_range_key = self.class.dynamo_table.range_keys.find{|k| k[:primary_range_key]}
+        options[:range_value] = read_attribute(primary_range_key[:attribute_name])
       end
       adapter.delete(persisted_id, options)
     end

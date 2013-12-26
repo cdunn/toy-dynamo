@@ -126,6 +126,10 @@ module Toy
           else
             aggregated_results
           end
+        end # scan
+
+        def read_first(hash_value, options={})
+          self.read_range(hash_value, options).first
         end
 
       end # ClassMethods
