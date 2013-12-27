@@ -280,7 +280,7 @@ module Toy
             raise ArgumentError, "range_key was not provided to the write command" if range_key_value.blank?
             key_request.merge!({
               @primary_range_key[:attribute_name] => {
-                @primary_range_key[:attribute_type] => @primary_range_key.to_s
+                @primary_range_key[:attribute_type] => range_key_value.to_s
               }
             })
           end
