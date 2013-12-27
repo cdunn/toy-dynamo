@@ -67,8 +67,8 @@ module Toy
           results = adapter.batch_read(keys, options)
           results[:responses][dynamo_table.table_schema[:table_name]].each do |result|
             attrs = Response.strip_attr_types(result)
-            if dynamo_table.range_keys.present?
-              (results_map[attrs[dynamo_table.hash_key[:attribute_name]]] ||= {})[attrs[dynamo_table.range_keys.find{|rk| rk[:primary_range_key] }[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
+            if dynamo_table.range_keys.present? && primary_range_key = dynamo_table.range_keys.find{|rk| rk[:primary_range_key] }
+              (results_map[attrs[dynamo_table.hash_key[:attribute_name]]] ||= {})[attrs[primary_range_key[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
             else
               results_map[attrs[dynamo_table.hash_key[:attribute_name]]] = load(attrs[dynamo_table.hash_key[:attribute_name]], attrs)
             end

@@ -71,6 +71,7 @@ module Toy
             @hash_key = key_schema_attr
           else
             (@range_keys ||= []) << key_schema_attr.merge(:primary_range_key => true)
+            @primary_range_key = key_schema_attr.merge(:primary_range_key => true)
           end
         end
 
@@ -212,7 +213,7 @@ module Toy
         if options[:select].is_a?(Array)
           attrs_to_select = [options[:select].map(&:to_s)].flatten
           attrs_to_select << @hash_key[:attribute_name]
-          attrs_to_select << primary_range_key[:attribute_name] if @range_keys && primary_range_key = @range_keys.find{|k| k[:primary_range_key] }
+          attrs_to_select << @primary_range_key[:attribute_name] if @primary_range_key
           query_request.merge!({
             :select => QUERY_SELECT[:specific],
             :attributes_to_get => attrs_to_select.uniq
@@ -236,7 +237,7 @@ module Toy
         keys_request = []
         keys.each do |k|
           key_request = {}
-          if @range_keys.present?
+          if @primary_range_key
             hash_value = k[:hash_value]
           else
             raise ArgumentError, "expected keys to be in the form of ['hash key here'] for table with no range keys" if hash_value.is_a?(Hash)
@@ -244,10 +245,10 @@ module Toy
           end
           raise ArgumentError, "every key must include a :hash_value" if hash_value.blank?
           key_request[@hash_key[:attribute_name]] = { @hash_key[:attribute_type] => hash_value.to_s }
-          if @range_keys.present? && primary_range_key = @range_keys.find{|k| k[:primary_range_key] }
+          if @primary_range_key
             range_value = k[:range_value]
             raise ArgumentError, "every key must include a :range_value" if range_value.blank?
-            key_request[primary_range_key[:attribute_name]] = { primary_range_key[:attribute_type] => range_value.to_s }
+            key_request[@primary_range_key[:attribute_name]] = { @primary_range_key[:attribute_type] => range_value.to_s }
           end
           keys_request << key_request
         end
@@ -274,18 +275,18 @@ module Toy
               @hash_key[:attribute_type] => hash_key_value.to_s
             }
           }
-          if @range_keys && primary_range_key = @range_keys.find{|k| k[:primary_range_key]}
-            range_key_value = attributes[primary_range_key[:attribute_name]]
+          if @primary_range_key
+            range_key_value = attributes[@primary_range_key[:attribute_name]]
             raise ArgumentError, "range_key was not provided to the write command" if range_key_value.blank?
             key_request.merge!({
-              primary_range_key[:attribute_name] => {
-                primary_range_key[:attribute_type] => primary_range_key.to_s
+              @primary_range_key[:attribute_name] => {
+                @primary_range_key[:attribute_type] => @primary_range_key.to_s
               }
             })
           end
           attrs_to_update = {}
           attributes.each_pair do |k,v|
-            next if primary_range_key && k == primary_range_key[:attribute_name]
+            next if @primary_range_key && k == @primary_range_key[:attribute_name]
             if v.blank?
               attrs_to_update.merge!({ k => { :action => "DELETE" } })
             else
@@ -327,11 +328,11 @@ module Toy
             @hash_key[:attribute_type] => hash_key_value.to_s
           }
         }
-        if @range_keys && primary_range_key = @range_keys.find{|k| k[:primary_range_key]}
+        if @primary_range_key
           raise ArgumentError, "range_key was not provided to the delete_item command" if options[:range_value].blank?
           key_request.merge!({
-            primary_range_key[:attribute_name] => {
-              primary_range_key[:attribute_type] => options[:range_value].to_s
+            @primary_range_key[:attribute_name] => {
+              @primary_range_key[:attribute_type] => options[:range_value].to_s
             }
           })
         end
@@ -380,7 +381,7 @@ module Toy
         if options[:select].is_a?(Array)
           attrs_to_select = [options[:select].map(&:to_s)].flatten
           attrs_to_select << @hash_key[:attribute_name]
-          attrs_to_select << primary_range_key[:attribute_name] if @range_keys && primary_range_key = @range_keys.find{|k| k[:primary_range_key] }
+          attrs_to_select << @primary_range_key[:attribute_name] if @primary_range_key
           scan_request.merge!({
             :select => QUERY_SELECT[:specific],
             :attributes_to_get => attrs_to_select.uniq
