@@ -17,6 +17,7 @@ require "toy/dynamo/extensions/hash"
 require "toy/dynamo/extensions/set"
 require "toy/dynamo/extensions/time"
 require "toy/dynamo/extensions/symbol"
+require "toy/dynamo/extensions/float"
 
 module Toy
   module Dynamo
