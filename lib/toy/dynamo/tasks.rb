@@ -11,12 +11,14 @@ module Toy
         Dir.glob(File.join("#{dir}/**/*.rb")).each do |path|
           model_filename = path[/#{Regexp.escape(dir.to_s)}\/([^\.]+).rb/, 1]
           next if model_filename.match(/^concerns\//i) # Skip concerns/ folder
-          klass = model_filename.camelize.constantize
 
           begin
             klass = model_filename.camelize.constantize
           rescue NameError
             require(path) ? retry : raise
+          rescue LoadError => e
+            # Try non-namespaced class name instead...
+            klass = model_filename.camelize.split("::").last.constantize
           end
 
           # Skip if the class doesn't have Toy::Dynamo integration
