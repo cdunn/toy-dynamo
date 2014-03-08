@@ -182,7 +182,6 @@ module Toy
           raise ArgumentError, ":range key must be a Range if using the operator BETWEEN" if comparison_operator == "between" && !options[:range].values.first.is_a?(Range)
 
           if range_key.has_key?(:index_name) # Local/Global Secondary Index
-            options[:select] = :projected unless options[:select].present?
             query_request.merge!(:index_name => range_key[:index_name])
           end
 
@@ -209,6 +208,7 @@ module Toy
         end
 
         # Default if not already set
+        options[:select] = :projected if options[:select].blank? && query_request[:index_name]
         options[:select] ||= :all # :all, :projected, :count, []
         if options[:select].is_a?(Array)
           attrs_to_select = [options[:select].map(&:to_s)].flatten
