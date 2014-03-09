@@ -204,11 +204,9 @@ module Toy
         end
 
         if options[:global_secondary_index] # Override index_name if using GSI
+          options[:select] = :projected if options[:select].blank?
           query_request.merge!(:index_name => gsi[:index_name])
         end
-
-        # Default if not already set
-        options[:select] = :projected if options[:select].blank? && query_request[:index_name]
         options[:select] ||= :all # :all, :projected, :count, []
         if options[:select].is_a?(Array)
           attrs_to_select = [options[:select].map(&:to_s)].flatten
@@ -225,6 +223,8 @@ module Toy
         query_request.merge!({ :limit => options[:limit].to_i }) if options.has_key?(:limit)
         query_request.merge!({ :exclusive_start_key => options[:exclusive_start_key] }) if options[:exclusive_start_key]
 
+        puts "HERE"
+        puts query_request
         @client.query(query_request)
       end
 
