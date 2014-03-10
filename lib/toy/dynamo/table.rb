@@ -223,8 +223,6 @@ module Toy
         query_request.merge!({ :limit => options[:limit].to_i }) if options.has_key?(:limit)
         query_request.merge!({ :exclusive_start_key => options[:exclusive_start_key] }) if options[:exclusive_start_key]
 
-        puts "HERE"
-        puts query_request
         @client.query(query_request)
       end
 
