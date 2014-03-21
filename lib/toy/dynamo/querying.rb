@@ -17,6 +17,8 @@ module Toy
           raise ArgumentError, "no range_key specified for this table" if dynamo_table.range_keys.blank? && global_secondary_indexes.blank?
           aggregated_results = []
 
+          # Useful if doing pagination where you would need the last key evaluated
+          return_last_evaluated_key = options.delete(:return_last_evaluated_key)
           batch_size = options.delete(:batch) || DEFAULT_BATCH_SIZE
           max_results_limit = options[:limit]
           if options[:limit] && options[:limit] > batch_size
@@ -53,7 +55,14 @@ module Toy
             end
           end
 
-          aggregated_results
+          if return_last_evaluated_key
+            {
+              last_evaluated_key: response.last_evaluated_key,
+              members: aggregated_results
+            }
+          else
+            aggregated_results
+          end
         end
 
         def count_range(hash_value, options={})
