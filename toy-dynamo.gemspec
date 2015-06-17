@@ -22,6 +22,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'adapter', '~> 0.7.0'
   spec.add_dependency 'rake'
-  spec.add_dependency 'aws-sdk', '~> 1.13'
+  spec.add_dependency 'aws-sdk', '~> 1.64'
   spec.add_dependency 'orm_adapter'
 end
